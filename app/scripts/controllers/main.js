@@ -9,7 +9,6 @@ angular.module('chematicaD3jsApp')
 //    ];
 
         // Get the model
-        $scope.retroJson = {};
         $http.get('example_retro.json').success(function (data) {
             $scope.retroJson = data;
         });
@@ -28,45 +27,60 @@ angular.module('chematicaD3jsApp')
             .attr("width", width)
             .attr("height", height);
 
-        $scope.$watch('retroJson', function(){
+        $scope.$watch('retroJson', function () {
+            if (typeof $scope.retroJson === 'undefined')  return;
 
             // D3.js control code (messy, FIXME)
-            var makeGraphJson =  function(retroJson) {
+            var makeGraphJson = function (retroJson) {
                 var idx = 0;
                 var result = {
-                    "nodes" : [],
-                    "links" : []
+                    "nodes": [],
+                    "links": []
                 };
 
                 retroJson.idx = idx;
                 var currentNodes = [retroJson];
 
-                while(currentNodes.length) {
+                while (currentNodes.length) {
                     var newNodes = [];
-                    for( var j in currentNodes){
-                        var node = currentNodes[j];
-                        result.nodes[node.idx]= {
+                    currentNodes.forEach(function (node) {
+                        result.nodes[node.idx] = {
                             "name": node.smiles,
                             "nodeType": "chemical",
                             "idx": node.idx
                         };
-                        if(node.syntheses)
-                            for (var i in node.syntheses) {
-                                var reactionIdx = (idx += 1);
-                                result.nodes[reactionIdx]= {
-                                    "name": node.syntheses[i].rxid,
-                                    "nodeType": "reaction",
-                                    "idx": reactionIdx
-                                };
-                                result.links.push({"source": reactionIdx, "target": node.idx, "value": 1});
-                                for (var k in node.syntheses[i].synthons) {
-                                    //console.log(node.sytheses[i].synthons[k]);
-                                    node.syntheses[i].synthons[k].idx = (idx += 1);
-                                    result.links.push({"source": idx, "target": reactionIdx, "value": 1});
-                                    newNodes.push(node.syntheses[i].synthons[k]);
-                                }
+                        (node.syntheses || []).forEach(function (child) {
+                            var reactionIdx = (idx += 1);
+                            result.nodes[reactionIdx] = {
+                                "name": child.rxid,
+                                "nodeType": "reaction",
+                                "idx": reactionIdx
+                            };
+                            result.links.push({"source": reactionIdx, "target": node.idx, "value": 1});
+                            for (var k in child.synthons) {
+                                //console.log(node.sytheses[i].synthons[k]);
+                                child.synthons[k].idx = (idx += 1);
+                                result.links.push({"source": idx, "target": reactionIdx, "value": 1});
+                                newNodes.push(child.synthons[k]);
                             }
-                    }
+                        });
+
+//                            for (var i in node.syntheses) {
+//                                var reactionIdx = (idx += 1);
+//                                result.nodes[reactionIdx]= {
+//                                    "name": node.syntheses[i].rxid,
+//                                    "nodeType": "reaction",
+//                                    "idx": reactionIdx
+//                                };
+//                                result.links.push({"source": reactionIdx, "target": node.idx, "value": 1});
+//                                for (var k in node.syntheses[i].synthons) {
+//                                    //console.log(node.sytheses[i].synthons[k]);
+//                                    node.syntheses[i].synthons[k].idx = (idx += 1);
+//                                    result.links.push({"source": idx, "target": reactionIdx, "value": 1});
+//                                    newNodes.push(node.syntheses[i].synthons[k]);
+//                                }
+//                            }
+                    });
                     currentNodes = newNodes;
                 }
                 return result;
@@ -80,8 +94,12 @@ angular.module('chematicaD3jsApp')
                 .links(graph.links)
                 .start();
 
-            var chemicalNodes = graph.nodes.filter(function (d) { return d.nodeType === "chemical"});
-            var reactionNodes = graph.nodes.filter(function (d) { return d.nodeType === "reaction"});
+            var chemicalNodes = graph.nodes.filter(function (d) {
+                return d.nodeType === "chemical"
+            });
+            var reactionNodes = graph.nodes.filter(function (d) {
+                return d.nodeType === "reaction"
+            });
 
             // Define the arrows for the ends of edges
             svg.append("svg:defs")
@@ -100,49 +118,81 @@ angular.module('chematicaD3jsApp')
                 .data(graph.links)
                 .enter().append("line")
                 .attr("class", "link")
-                .attr("marker-end", function(d) { return "url(#arrow)"; })
-                .style("stroke-width", function(d) { return Math.sqrt(d.value); });
+                .attr("marker-end", function (d) {
+                    return "url(#arrow)";
+                })
+                .style("stroke-width", function (d) {
+                    return Math.sqrt(d.value);
+                });
 
             // Format the chemical nodes
             var chemNode = svg.selectAll(".node")
-                .data(chemicalNodes, function (d) {return d.idx;})
+                .data(chemicalNodes, function (d) {
+                    return d.idx;
+                })
                 .enter()
                 .append("circle")
                 .attr("r", 5)
                 .attr("class", "node")
-                .style("fill", function(d) { return color(d.group); })
+                .style("fill", function (d) {
+                    return color(d.group);
+                })
                 .call(force.drag);
 
             chemNode.append("title")
-                .text(function(d) { return d.name; });
+                .text(function (d) {
+                    return d.name;
+                });
 
             // Format the reaction nodes
             console.log(reactionNodes);
             var rxNode = svg.selectAll(".node")
-                .data(reactionNodes, function (d) {return d.idx;})
+                .data(reactionNodes, function (d) {
+                    return d.idx;
+                })
                 .enter()
                 .append("rect")
                 .attr("class", "node")
                 .attr("width", 10)
                 .attr("height", 10)
-                .style("fill", function(d) { return color(d.group); })
+                .style("fill", function (d) {
+                    return color(d.group);
+                })
                 .call(force.drag);
 
             rxNode.append("title")
-                .text(function(d) { return d.name; });
+                .text(function (d) {
+                    return d.name;
+                });
 
-            force.on("tick", function() {
-                link.attr("x1", function(d) { return d.source.x; })
-                    .attr("y1", function(d) { return d.source.y; })
-                    .attr("x2", function(d) { return d.target.x; })
-                    .attr("y2", function(d) { return d.target.y; });
+            force.on("tick", function () {
+                link.attr("x1", function (d) {
+                    return d.source.x;
+                })
+                    .attr("y1", function (d) {
+                        return d.source.y;
+                    })
+                    .attr("x2", function (d) {
+                        return d.target.x;
+                    })
+                    .attr("y2", function (d) {
+                        return d.target.y;
+                    });
 
 
-                chemNode.attr("cx", function(d) { return d.x; })
-                    .attr("cy", function(d) { return d.y; });
+                chemNode.attr("cx", function (d) {
+                    return d.x;
+                })
+                    .attr("cy", function (d) {
+                        return d.y;
+                    });
 
-                rxNode.attr("x", function(d) { return d.x; })
-                    .attr("y", function(d) { return d.y; });
+                rxNode.attr("x", function (d) {
+                    return d.x;
+                })
+                    .attr("y", function (d) {
+                        return d.y;
+                    });
 
             });
         })
