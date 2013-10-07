@@ -1,0 +1,42 @@
+{
+    "smiles": "N(C(Cc1ccccc1)C)C",
+    "depth": 0,
+    "syntheses": [
+        {
+            "rxid": 5009,
+            "norm_yield": 1,
+            "yield": 1,
+            "score": 1,
+            "synthons": [
+                {
+                    "smiles": "c1ccccc1",
+                    "depth": 1
+                },
+                {
+                    "smiles": "CNC(C)CO",
+                    "depth": 1,
+                    "syntheses": [
+                        {
+                            "rxid": 10061,
+                            "norm_yield": 1,
+                            "yield": 1,
+                            "score": 1,
+                            "synthons": [
+                                {
+                                    "smiles": "CC(O)CO",
+                                    "depth": 2
+                                },
+                                {
+                                    "smiles": "CN",
+                                    "depth": 2
+                                }
+                            ],
+                            "rank": 0
+                        }
+                    ]
+                }
+            ],
+            "rank": 0
+        }
+    ]
+}
