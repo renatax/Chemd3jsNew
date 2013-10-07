@@ -1,53 +1,18 @@
 'use strict';
 
 angular.module('chematicaD3jsApp')
-  .controller('MainCtrl', function ($scope) {
+    .controller('MainCtrl', function ($scope, $http) {
 //    $scope.awesomeThings = [
 //      'HTML5 Boilerplate',
 //      'AngularJS',
 //      'Karma'
 //    ];
 
-        var makeGraphJson =  function(retroJson) {
-            var idx = 0;
-            var result = {
-                "nodes" : [],
-                "links" : []
-            };
-
-            retroJson.idx = idx;
-            var currentNodes = [retroJson];
-
-            while(currentNodes.length) {
-                var newNodes = [];
-                for( var j in currentNodes){
-                    var node = currentNodes[j];
-                    result.nodes[node.idx]= {
-                        "name": node.smiles,
-                        "nodeType": "chemical",
-                        "idx": node.idx
-                    };
-                    if(node.syntheses)
-                        for (var i in node.syntheses) {
-                            var reactionIdx = (idx += 1);
-                            result.nodes[reactionIdx]= {
-                                "name": node.syntheses[i].rxid,
-                                "nodeType": "reaction",
-                                "idx": reactionIdx
-                            };
-                            result.links.push({"source": reactionIdx, "target": node.idx, "value": 1});
-                            for (var k in node.syntheses[i].synthons) {
-                                //console.log(node.sytheses[i].synthons[k]);
-                                node.syntheses[i].synthons[k].idx = (idx += 1);
-                                result.links.push({"source": idx, "target": reactionIdx, "value": 1});
-                                newNodes.push(node.syntheses[i].synthons[k]);
-                            }
-                        }
-                }
-                currentNodes = newNodes;
-            }
-            return result;
-        }
+        // Get the model
+        $scope.retroJson = {};
+        $http.get('example_retro.json').success(function (data) {
+            $scope.retroJson = data;
+        });
 
         var width = 960,
             height = 500;
@@ -63,9 +28,53 @@ angular.module('chematicaD3jsApp')
             .attr("width", width)
             .attr("height", height);
 
+        $scope.$watch('retroJson', function(){
 
-        d3.json("example_retro.json", function(error, algorithmResult) {
-            var graph = makeGraphJson(algorithmResult);
+            // D3.js control code (messy, FIXME)
+            var makeGraphJson =  function(retroJson) {
+                var idx = 0;
+                var result = {
+                    "nodes" : [],
+                    "links" : []
+                };
+
+                retroJson.idx = idx;
+                var currentNodes = [retroJson];
+
+                while(currentNodes.length) {
+                    var newNodes = [];
+                    for( var j in currentNodes){
+                        var node = currentNodes[j];
+                        result.nodes[node.idx]= {
+                            "name": node.smiles,
+                            "nodeType": "chemical",
+                            "idx": node.idx
+                        };
+                        if(node.syntheses)
+                            for (var i in node.syntheses) {
+                                var reactionIdx = (idx += 1);
+                                result.nodes[reactionIdx]= {
+                                    "name": node.syntheses[i].rxid,
+                                    "nodeType": "reaction",
+                                    "idx": reactionIdx
+                                };
+                                result.links.push({"source": reactionIdx, "target": node.idx, "value": 1});
+                                for (var k in node.syntheses[i].synthons) {
+                                    //console.log(node.sytheses[i].synthons[k]);
+                                    node.syntheses[i].synthons[k].idx = (idx += 1);
+                                    result.links.push({"source": idx, "target": reactionIdx, "value": 1});
+                                    newNodes.push(node.syntheses[i].synthons[k]);
+                                }
+                            }
+                    }
+                    currentNodes = newNodes;
+                }
+                return result;
+            }
+
+            //       d3.json("example_retro.json", function(error, algorithmResult) {
+
+            var graph = makeGraphJson($scope.retroJson);
 
             force.nodes(graph.nodes)
                 .links(graph.links)
@@ -135,9 +144,8 @@ angular.module('chematicaD3jsApp')
                 rxNode.attr("x", function(d) { return d.x; })
                     .attr("y", function(d) { return d.y; });
 
-//            node.attr("cx", function(d) { return d.x; })
-//                    .attr("cy", function(d) { return d.y; });
-
             });
-        });
-  });
+        })
+
+        //       });
+    });
