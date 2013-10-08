@@ -99,17 +99,6 @@ App.directive('d3graph', function () {
                     return d.nodeType === "reaction"
                 });
 
-                var link = svg.selectAll(".link")
-                    .data($scope.graph.links)
-                    .enter().append("line")
-                    .attr("class", "link")
-                    .attr("marker-end", function () {
-                        return "url(#arrow)";
-                    })
-                    .style("stroke-width", function (d) {
-                        return Math.sqrt(d.value);
-                    });
-
                 // Format the chemical nodes
                 var chemNode = svg.selectAll(".node")
                     .data(chemicalNodes, function (d) {
@@ -147,6 +136,18 @@ App.directive('d3graph', function () {
                 rxNode.append("title")
                     .text(function (d) {
                         return d.name;
+                    });
+
+                // FIXME: link start and end points are ugly ~Ling
+                var link = svg.selectAll(".link")
+                    .data($scope.graph.links)
+                    .enter().append("line")
+                    .attr("class", "link")
+                    .attr("marker-end", function () {
+                        return "url(#arrow)";
+                    })
+                    .style("stroke-width", function (d) {
+                        return Math.sqrt(d.value);
                     });
 
                 var updateForceGraphNodes = function(){
