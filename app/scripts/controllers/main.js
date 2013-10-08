@@ -56,9 +56,9 @@ App.directive('d3graph', function () {
         restrict: 'E',
         replace: true,
         template: '<div id="chart"></div>',
-        link: function (scope) {
-            var width = 960,
-                height = 300;
+        link: function (scope, element, attrs) {
+            var width = scope.$eval(attrs.width),
+                height = scope.$eval(attrs.height);
 
             // FIXME: Does nothing
             var color = d3.scale.category20();
@@ -73,6 +73,7 @@ App.directive('d3graph', function () {
                 .attr("width", width)
                 .attr("height", height);
 
+            // FIXME: triangles need to scale
             svg.append("svg:defs")
                 .append("svg:marker")
                 .attr("id", "arrow")
