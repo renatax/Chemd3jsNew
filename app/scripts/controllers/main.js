@@ -149,6 +149,14 @@ App.directive('d3graph', function () {
                         return d.name;
                     });
 
+                var updateForceGraphNodes = function(){
+                    svg.selectAll("rect.node")
+                        .attr("width", 10 * $scope.scale)
+                        .attr("height", 10 * $scope.scale);
+                    svg.selectAll("circle.node")
+                        .attr("r", 5 * $scope.scale);
+                }
+
                 var updateForceGraph = function () {
                     link.attr("x1", function (d) {
                         return d.source.x * $scope.scale - $scope.xoffset;
@@ -183,7 +191,7 @@ App.directive('d3graph', function () {
 
                 $scope.$watch('scale', function() {
                     updateForceGraph();
-                    console.log($scope.scale);
+                    updateForceGraphNodes();
                 });
             });
         }
