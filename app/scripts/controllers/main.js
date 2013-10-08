@@ -56,7 +56,7 @@ App.directive('d3graph', function () {
         restrict: 'E',
         replace: true,
         template: '<div id="chart"></div>',
-        link: function ($scope) {
+        link: function (scope) {
             var width = 960,
                 height = 300;
 
@@ -85,17 +85,17 @@ App.directive('d3graph', function () {
                 .append("svg:path")
                 .attr("d", "M0,-5L10,0L0,5");
 
-            $scope.$watch('graph', function () {
-                if (typeof $scope.graph === 'undefined') return;
+            scope.$watch('graph', function () {
+                if (typeof scope.graph === 'undefined') return;
 
-                force.nodes($scope.graph.nodes)
-                    .links($scope.graph.links)
+                force.nodes(scope.graph.nodes)
+                    .links(scope.graph.links)
                     .start();
 
-                var chemicalNodes = $scope.graph.nodes.filter(function (d) {
+                var chemicalNodes = scope.graph.nodes.filter(function (d) {
                     return d.nodeType === "chemical"
                 });
-                var reactionNodes = $scope.graph.nodes.filter(function (d) {
+                var reactionNodes = scope.graph.nodes.filter(function (d) {
                     return d.nodeType === "reaction"
                 });
 
@@ -106,7 +106,7 @@ App.directive('d3graph', function () {
                     })
                     .enter()
                     .append("circle")
-                    .attr("r", 5 * $scope.scale)
+                    .attr("r", 5 * scope.scale)
                     .attr("class", "node")
                     .style("fill", function (d) {
                         return color(d.group);
@@ -126,8 +126,8 @@ App.directive('d3graph', function () {
                     .enter()
                     .append("rect")
                     .attr("class", "node")
-                    .attr("width", 10 * $scope.scale)
-                    .attr("height", 10 * $scope.scale)
+                    .attr("width", 10 * scope.scale)
+                    .attr("height", 10 * scope.scale)
                     .style("fill", function (d) {
                         return color(d.group);
                     })
@@ -140,7 +140,7 @@ App.directive('d3graph', function () {
 
                 // FIXME: link start and end points are ugly ~Ling
                 var link = svg.selectAll(".link")
-                    .data($scope.graph.links)
+                    .data(scope.graph.links)
                     .enter().append("line")
                     .attr("class", "link")
                     .attr("marker-end", function () {
@@ -152,45 +152,45 @@ App.directive('d3graph', function () {
 
                 var updateForceGraphNodes = function(){
                     svg.selectAll("rect.node")
-                        .attr("width", 10 * $scope.scale)
-                        .attr("height", 10 * $scope.scale);
+                        .attr("width", 10 * scope.scale)
+                        .attr("height", 10 * scope.scale);
                     svg.selectAll("circle.node")
-                        .attr("r", 5 * $scope.scale);
+                        .attr("r", 5 * scope.scale);
                 }
 
                 var updateForceGraph = function () {
                     link.attr("x1", function (d) {
-                        return d.source.x * $scope.scale - $scope.xoffset;
+                        return d.source.x * scope.scale - scope.xoffset;
                     })
                         .attr("y1", function (d) {
-                            return d.source.y * $scope.scale - $scope.yoffset;
+                            return d.source.y * scope.scale - scope.yoffset;
                         })
                         .attr("x2", function (d) {
-                            return d.target.x * $scope.scale - $scope.xoffset;
+                            return d.target.x * scope.scale - scope.xoffset;
                         })
                         .attr("y2", function (d) {
-                            return d.target.y * $scope.scale - $scope.yoffset;
+                            return d.target.y * scope.scale - scope.yoffset;
                         });
 
 
                     chemNode.attr("cx", function (d) {
-                        return d.x * $scope.scale - $scope.xoffset;
+                        return d.x * scope.scale - scope.xoffset;
                     })
                         .attr("cy", function (d) {
-                            return d.y * $scope.scale - $scope.yoffset;
+                            return d.y * scope.scale - scope.yoffset;
                         });
 
                     rxNode.attr("x", function (d) {
-                        return d.x * $scope.scale - $scope.xoffset;
+                        return d.x * scope.scale - scope.xoffset;
                     })
                         .attr("y", function (d) {
-                            return d.y * $scope.scale - $scope.yoffset;
+                            return d.y * scope.scale - scope.yoffset;
                         });
                 };
 
                 force.on('tick', updateForceGraph);
 
-                $scope.$watch('scale', function() {
+                scope.$watch('scale', function() {
                     updateForceGraph();
                     updateForceGraphNodes();
                 });
