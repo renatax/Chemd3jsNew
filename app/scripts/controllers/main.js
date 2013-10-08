@@ -182,10 +182,10 @@ App.directive('d3graph', function () {
                         });
 
                     rxNode.attr("x", function (d) {
-                        return d.x * scope.scale - scope.xoffset;
+                        return (d.x-5) * scope.scale - scope.xoffset;
                     })
                         .attr("y", function (d) {
-                            return d.y * scope.scale - scope.yoffset;
+                            return (d.y-5) * scope.scale - scope.yoffset;
                         });
                 };
 
