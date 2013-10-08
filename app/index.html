@@ -10,11 +10,29 @@
     <meta name="description" content="">
     <meta name="viewport" content="width=device-width">
     <!-- Place favicon.ico and apple-touch-icon.png in the root directory -->
+      <link rel="stylesheet" href="styles/d3.slider.css" />
+      <!-- Optionally enable responsive features in IE8 -->
+      <link href="//getbootstrap.com/assets/css/docs.css" rel="stylesheet" media="screen">
+      <link href="//getbootstrap.com/dist/css/bootstrap.css" rel="stylesheet" media="screen">
+      <script src="//ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script>
 
-        <!-- build:css(.tmp) styles/main.css -->
-        <link rel="stylesheet" href="styles/bootstrap.css">
-        <link rel="stylesheet" href="styles/main.css">
-        <!-- endbuild -->
+
+      <!-- Optionally enable responsive features in IE8 -->
+      <link href="//getbootstrap.com/assets/css/docs.css" rel="stylesheet" media="screen">
+      <link href="//getbootstrap.com/dist/css/bootstrap.css" rel="stylesheet" media="screen">
+      <script src="//getbootstrap.com/dist/js/bootstrap.js"></script>
+    <!-- build:css(.tmp) styles/main.css -->
+    <link rel="stylesheet" href="styles/main.css">
+    <!-- endbuild -->
+      <style>
+          .bootstrap-slider{
+              display:block;
+              width:80px;
+              height:20px;
+              background-color:darkred;
+              position:relative;
+          }
+      </style>
 </head>
   <body ng-app="chematicaD3jsApp">
     <!--[if lt IE 7]>
@@ -25,8 +43,8 @@
       <script src="bower_components/es5-shim/es5-shim.js"></script>
       <script src="bower_components/json3/lib/json3.min.js"></script>
     <![endif]-->
+    <div id="slider1"></div>
 
-    <!-- Add your site or application content here -->
     <div class="container" ng-view=""></div>
 
     <!-- Google Analytics: change UA-XXXXX-X to be your site's ID -->
@@ -42,23 +60,7 @@
 
     <script src="bower_components/jquery/jquery.js"></script>
     <script src="bower_components/angular/angular.js"></script>
-
-        <!-- build:js scripts/plugins.js -->
-        <script src="bower_components/bootstrap-sass/js/bootstrap-affix.js"></script>
-        <script src="bower_components/bootstrap-sass/js/bootstrap-alert.js"></script>
-        <script src="bower_components/bootstrap-sass/js/bootstrap-dropdown.js"></script>
-        <script src="bower_components/bootstrap-sass/js/bootstrap-tooltip.js"></script>
-        <script src="bower_components/bootstrap-sass/js/bootstrap-modal.js"></script>
-        <script src="bower_components/bootstrap-sass/js/bootstrap-transition.js"></script>
-        <script src="bower_components/bootstrap-sass/js/bootstrap-button.js"></script>
-        <script src="bower_components/bootstrap-sass/js/bootstrap-popover.js"></script>
-        <script src="bower_components/bootstrap-sass/js/bootstrap-typeahead.js"></script>
-        <script src="bower_components/bootstrap-sass/js/bootstrap-carousel.js"></script>
-        <script src="bower_components/bootstrap-sass/js/bootstrap-scrollspy.js"></script>
-        <script src="bower_components/bootstrap-sass/js/bootstrap-collapse.js"></script>
-        <script src="bower_components/bootstrap-sass/js/bootstrap-tab.js"></script>
-        <!-- endbuild -->
-
+    <script src="//netdna.bootstrapcdn.com/bootstrap/3.0.0/js/bootstrap.min.js"></script>
         <!-- build:js scripts/modules.js -->
         <script src="bower_components/angular-resource/angular-resource.js"></script>
         <script src="bower_components/angular-cookies/angular-cookies.js"></script>
@@ -70,6 +72,7 @@
         <script src="scripts/controllers/main.js"></script>
         <!-- endbuild -->
 
-        <script src="http://d3js.org/d3.v3.min.js"></script>
+        <script src="http://d3js.org/d3.v3.js"></script>
+    <script src="scripts/d3.slider.js"></script>
 </body>
 </html>

@@ -1,107 +1,78 @@
 'use strict';
 
-angular.module('chematicaD3jsApp')
-    .controller('MainCtrl', function ($scope, $http) {
+var App = angular.module('chematicaD3jsApp');
+App.controller('MainCtrl', function ($scope, $http) {
 //    $scope.awesomeThings = [
 //      'HTML5 Boilerplate',
 //      'AngularJS',
 //      'Karma'
 //    ];
+    $scope.scale = 1;
+    $scope.xoffset = 10;
+    $scope.yoffset = 50;
+    // Get the graph model ($scope.graph)
+    $http.get('example_retro.json').success(function (data) {
+        // Process the data into something we can draw:
+        var idx = 0;
+        var result = {
+            "nodes": [],
+            "links": []
+        };
 
-        // Get the model
-        $http.get('example_retro.json').success(function (data) {
-            $scope.retroJson = data;
-        });
+        data.idx = idx;
+        var currentNodes = [data];
 
-        var width = 960,
-            height = 500;
-
-        var color = d3.scale.category20();
-
-        var force = d3.layout.force()
-            .charge(-130)
-            .linkDistance(30)
-            .size([width, height]);
-
-        var svg = d3.select("div").append("svg")
-            .attr("width", width)
-            .attr("height", height);
-
-        $scope.$watch('retroJson', function () {
-            if (typeof $scope.retroJson === 'undefined')  return;
-
-            // D3.js control code (messy, FIXME)
-            var makeGraphJson = function (retroJson) {
-                var idx = 0;
-                var result = {
-                    "nodes": [],
-                    "links": []
+        while (currentNodes.length) {
+            var newNodes = [];
+            currentNodes.forEach(function (node) {
+                result.nodes[node.idx] = {
+                    "name": node.smiles,
+                    "nodeType": "chemical",
+                    "idx": node.idx
                 };
-
-                retroJson.idx = idx;
-                var currentNodes = [retroJson];
-
-                while (currentNodes.length) {
-                    var newNodes = [];
-                    currentNodes.forEach(function (node) {
-                        result.nodes[node.idx] = {
-                            "name": node.smiles,
-                            "nodeType": "chemical",
-                            "idx": node.idx
-                        };
-                        (node.syntheses || []).forEach(function (child) {
-                            var reactionIdx = (idx += 1);
-                            result.nodes[reactionIdx] = {
-                                "name": child.rxid,
-                                "nodeType": "reaction",
-                                "idx": reactionIdx
-                            };
-                            result.links.push({"source": reactionIdx, "target": node.idx, "value": 1});
-                            for (var k in child.synthons) {
-                                //console.log(node.sytheses[i].synthons[k]);
-                                child.synthons[k].idx = (idx += 1);
-                                result.links.push({"source": idx, "target": reactionIdx, "value": 1});
-                                newNodes.push(child.synthons[k]);
-                            }
-                        });
-
-//                            for (var i in node.syntheses) {
-//                                var reactionIdx = (idx += 1);
-//                                result.nodes[reactionIdx]= {
-//                                    "name": node.syntheses[i].rxid,
-//                                    "nodeType": "reaction",
-//                                    "idx": reactionIdx
-//                                };
-//                                result.links.push({"source": reactionIdx, "target": node.idx, "value": 1});
-//                                for (var k in node.syntheses[i].synthons) {
-//                                    //console.log(node.sytheses[i].synthons[k]);
-//                                    node.syntheses[i].synthons[k].idx = (idx += 1);
-//                                    result.links.push({"source": idx, "target": reactionIdx, "value": 1});
-//                                    newNodes.push(node.syntheses[i].synthons[k]);
-//                                }
-//                            }
+                (node.syntheses || []).forEach(function (child) {
+                    var reactionIdx = (idx += 1);
+                    result.nodes[reactionIdx] = {
+                        "name": child.rxid,
+                        "nodeType": "reaction",
+                        "idx": reactionIdx
+                    };
+                    result.links.push({"source": reactionIdx, "target": node.idx, "value": 1 });
+                    child.synthons.forEach(function (synthon) {
+                        synthon.idx = (idx += 1);
+                        result.links.push({"source": idx, "target": reactionIdx, "value": 1 });
+                        newNodes.push(synthon);
                     });
-                    currentNodes = newNodes;
-                }
-                return result;
-            }
-
-            //       d3.json("example_retro.json", function(error, algorithmResult) {
-
-            var graph = makeGraphJson($scope.retroJson);
-
-            force.nodes(graph.nodes)
-                .links(graph.links)
-                .start();
-
-            var chemicalNodes = graph.nodes.filter(function (d) {
-                return d.nodeType === "chemical"
+                });
             });
-            var reactionNodes = graph.nodes.filter(function (d) {
-                return d.nodeType === "reaction"
-            });
+            currentNodes = newNodes;
+        }
+        $scope.graph = result;
+    });
+});
 
-            // Define the arrows for the ends of edges
+App.directive('d3graph', function () {
+    return {
+        restrict: 'E',
+        replace: true,
+        template: '<div id="chart"></div>',
+        link: function ($scope) {
+            var width = 960,
+                height = 300;
+
+            // FIXME: Does nothing
+            var color = d3.scale.category20();
+
+            var force = d3.layout.force()
+                .charge(-130)
+                .linkDistance(30)
+                .size([width, height]);
+
+            var svg = d3.select("div")
+                .append("svg")
+                .attr("width", width)
+                .attr("height", height);
+
             svg.append("svg:defs")
                 .append("svg:marker")
                 .attr("id", "arrow")
@@ -114,88 +85,125 @@ angular.module('chematicaD3jsApp')
                 .append("svg:path")
                 .attr("d", "M0,-5L10,0L0,5");
 
-            var link = svg.selectAll(".link")
-                .data(graph.links)
-                .enter().append("line")
-                .attr("class", "link")
-                .attr("marker-end", function (d) {
-                    return "url(#arrow)";
-                })
-                .style("stroke-width", function (d) {
-                    return Math.sqrt(d.value);
+            $scope.$watch('graph', function () {
+                if (typeof $scope.graph === 'undefined') return;
+
+                force.nodes($scope.graph.nodes)
+                    .links($scope.graph.links)
+                    .start();
+
+                var chemicalNodes = $scope.graph.nodes.filter(function (d) {
+                    return d.nodeType === "chemical"
+                });
+                var reactionNodes = $scope.graph.nodes.filter(function (d) {
+                    return d.nodeType === "reaction"
                 });
 
-            // Format the chemical nodes
-            var chemNode = svg.selectAll(".node")
-                .data(chemicalNodes, function (d) {
-                    return d.idx;
-                })
-                .enter()
-                .append("circle")
-                .attr("r", 5)
-                .attr("class", "node")
-                .style("fill", function (d) {
-                    return color(d.group);
-                })
-                .call(force.drag);
-
-            chemNode.append("title")
-                .text(function (d) {
-                    return d.name;
-                });
-
-            // Format the reaction nodes
-            console.log(reactionNodes);
-            var rxNode = svg.selectAll(".node")
-                .data(reactionNodes, function (d) {
-                    return d.idx;
-                })
-                .enter()
-                .append("rect")
-                .attr("class", "node")
-                .attr("width", 10)
-                .attr("height", 10)
-                .style("fill", function (d) {
-                    return color(d.group);
-                })
-                .call(force.drag);
-
-            rxNode.append("title")
-                .text(function (d) {
-                    return d.name;
-                });
-
-            force.on("tick", function () {
-                link.attr("x1", function (d) {
-                    return d.source.x;
-                })
-                    .attr("y1", function (d) {
-                        return d.source.y;
+                var link = svg.selectAll(".link")
+                    .data($scope.graph.links)
+                    .enter().append("line")
+                    .attr("class", "link")
+                    .attr("marker-end", function () {
+                        return "url(#arrow)";
                     })
-                    .attr("x2", function (d) {
-                        return d.target.x;
+                    .style("stroke-width", function (d) {
+                        return Math.sqrt(d.value);
+                    });
+
+                // Format the chemical nodes
+                var chemNode = svg.selectAll(".node")
+                    .data(chemicalNodes, function (d) {
+                        return d.idx;
                     })
-                    .attr("y2", function (d) {
-                        return d.target.y;
+                    .enter()
+                    .append("circle")
+                    .attr("r", 5 * $scope.scale)
+                    .attr("class", "node")
+                    .style("fill", function (d) {
+                        return color(d.group);
+                    })
+                    .call(force.drag);
+
+                chemNode.append("title")
+                    .text(function (d) {
+                        return d.name;
                     });
 
+                // Format the reaction nodes
+                var rxNode = svg.selectAll(".node")
+                    .data(reactionNodes, function (d) {
+                        return d.idx;
+                    })
+                    .enter()
+                    .append("rect")
+                    .attr("class", "node")
+                    .attr("width", 10 * $scope.scale)
+                    .attr("height", 10 * $scope.scale)
+                    .style("fill", function (d) {
+                        return color(d.group);
+                    })
+                    .call(force.drag);
 
-                chemNode.attr("cx", function (d) {
-                    return d.x;
-                })
-                    .attr("cy", function (d) {
-                        return d.y;
+                rxNode.append("title")
+                    .text(function (d) {
+                        return d.name;
                     });
 
-                rxNode.attr("x", function (d) {
-                    return d.x;
-                })
-                    .attr("y", function (d) {
-                        return d.y;
-                    });
+                var updateForceGraph = function () {
+                    link.attr("x1", function (d) {
+                        return d.source.x * $scope.scale - $scope.xoffset;
+                    })
+                        .attr("y1", function (d) {
+                            return d.source.y * $scope.scale - $scope.yoffset;
+                        })
+                        .attr("x2", function (d) {
+                            return d.target.x * $scope.scale - $scope.xoffset;
+                        })
+                        .attr("y2", function (d) {
+                            return d.target.y * $scope.scale - $scope.yoffset;
+                        });
 
+
+                    chemNode.attr("cx", function (d) {
+                        return d.x * $scope.scale - $scope.xoffset;
+                    })
+                        .attr("cy", function (d) {
+                            return d.y * $scope.scale - $scope.yoffset;
+                        });
+
+                    rxNode.attr("x", function (d) {
+                        return d.x * $scope.scale - $scope.xoffset;
+                    })
+                        .attr("y", function (d) {
+                            return d.y * $scope.scale - $scope.yoffset;
+                        });
+                };
+
+                force.on('tick', updateForceGraph);
+
+                $scope.$watch('scale', function() {
+                    updateForceGraph();
+                    console.log($scope.scale);
+                });
             });
-        })
+        }
+    };
+});
 
-        //       });
-    });
+App.directive('slider', function () {
+        return {
+            restrict: 'E',
+            replace: true,
+            template: '<div id="slider"></div>',
+            link: function ($scope) {
+                d3.select('#slider').call(
+                    d3.slider(d3.slider().axis(true).step(1)).on("slide", function (evt, value) {
+                        $scope.$apply(function() {
+                            $scope.scale = .7 + (value + 20)/100;
+                        });
+                    })
+                );
+            }
+        };
+    }
+);

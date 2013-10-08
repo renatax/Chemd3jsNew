@@ -20,3 +20,15 @@ body {
     line-height: 1;
     letter-spacing: -1px;
 }
+
+/* d3js styles */
+
+.node {
+    stroke: #fff;
+    stroke-width: 1px;
+}
+
+.link {
+    stroke: #999;
+    stroke-opacity: .6;
+}
