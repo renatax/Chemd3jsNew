@@ -8,8 +8,6 @@ App.controller('MainCtrl', function ($scope, $http) {
 //      'Karma'
 //    ];
     $scope.scale = 1;
-    $scope.xoffset = 10;
-    $scope.yoffset = 50;
     // Get the graph model ($scope.graph)
     $http.get('example_retro.json').success(function (data) {
         // Process the data into something we can draw:
@@ -49,6 +47,19 @@ App.controller('MainCtrl', function ($scope, $http) {
         }
         $scope.graph = result;
     });
+
+    $scope.test1 =  function(event, delta, deltaX, deltaY){
+        var msg = logMsg.build('test1', delta, deltaX, deltaY);
+
+        if (msg !== '') {
+            console.log(msg);
+        }
+
+        var pageX = event.pageX || event.originalEvent.pageX || event.originalEvent.clientX,
+            pageY = event.pageY || event.originalEvent.pageY || event.originalEvent.clientX;
+
+        console.log('pageX: ' + pageX + ', pageY: ' + pageY);
+    };
 });
 
 App.directive('d3graph', function () {
@@ -71,7 +82,18 @@ App.directive('d3graph', function () {
             var svg = d3.select("div")
                 .append("svg")
                 .attr("width", width)
-                .attr("height", height);
+                .attr("height", height)
+                .append("g");
+
+            // Rescale the graph based on the scale set by the view
+            // Rescales based on the center of the graph
+            scope.$watch('scale', function () {
+                svg.attr("transform",
+                    "translate(" + width / 2 + "," + height / 2 + ") "
+                        + "scale(" + scope.scale + ") "
+                        + "translate(" + -width / 2 + "," + -height / 2 + ") "
+                );
+            });
 
             // FIXME: triangles need to scale
             svg.append("svg:defs")
@@ -107,7 +129,7 @@ App.directive('d3graph', function () {
                     })
                     .enter()
                     .append("circle")
-                    .attr("r", 5 * scope.scale)
+                    .attr("r", 5)
                     .attr("class", "node")
                     .style("fill", function (d) {
                         return color(d.group);
@@ -127,8 +149,8 @@ App.directive('d3graph', function () {
                     .enter()
                     .append("rect")
                     .attr("class", "node")
-                    .attr("width", 10 * scope.scale)
-                    .attr("height", 10 * scope.scale)
+                    .attr("width", 10)
+                    .attr("height", 10)
                     .style("fill", function (d) {
                         return color(d.group);
                     })
@@ -151,50 +173,37 @@ App.directive('d3graph', function () {
                         return Math.sqrt(d.value);
                     });
 
-                var updateForceGraphNodes = function(){
-                    svg.selectAll("rect.node")
-                        .attr("width", 10 * scope.scale)
-                        .attr("height", 10 * scope.scale);
-                    svg.selectAll("circle.node")
-                        .attr("r", 5 * scope.scale);
-                }
-
                 var updateForceGraph = function () {
                     link.attr("x1", function (d) {
-                        return d.source.x * scope.scale - scope.xoffset;
+                        return (d.source.x - width / 2) + width / 2;
                     })
                         .attr("y1", function (d) {
-                            return d.source.y * scope.scale - scope.yoffset;
+                            return (d.source.y - height / 2) + height / 2;
                         })
                         .attr("x2", function (d) {
-                            return d.target.x * scope.scale - scope.xoffset;
+                            return (d.target.x - width / 2) + width / 2;
                         })
                         .attr("y2", function (d) {
-                            return d.target.y * scope.scale - scope.yoffset;
+                            return (d.target.y - height / 2) + height / 2;
                         });
 
 
                     chemNode.attr("cx", function (d) {
-                        return d.x * scope.scale - scope.xoffset;
+                        return (d.x - width / 2) + width / 2;
                     })
                         .attr("cy", function (d) {
-                            return d.y * scope.scale - scope.yoffset;
+                            return (d.y - height / 2) + height / 2;
                         });
 
                     rxNode.attr("x", function (d) {
-                        return (d.x-5) * scope.scale - scope.xoffset;
+                        return (d.x - 5 - width / 2) + width / 2;
                     })
                         .attr("y", function (d) {
-                            return (d.y-5) * scope.scale - scope.yoffset;
+                            return (d.y - 5 - height / 2) + height / 2;
                         });
                 };
 
                 force.on('tick', updateForceGraph);
-
-                scope.$watch('scale', function() {
-                    updateForceGraph();
-                    updateForceGraphNodes();
-                });
             });
         }
     };
@@ -208,12 +217,14 @@ App.directive('slider', function () {
             link: function ($scope) {
                 d3.select('#slider').call(
                     d3.slider(d3.slider().axis(true).step(1)).on("slide", function (evt, value) {
-                        $scope.$apply(function() {
-                            $scope.scale = .7 + (value + 20)/100;
+                        $scope.$apply(function () {
+                            $scope.scale = .7 + (value + 20) / 50;
                         });
                     })
                 );
             }
         };
     }
+
+
 );
