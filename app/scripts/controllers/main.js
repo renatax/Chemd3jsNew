@@ -1,13 +1,23 @@
 'use strict';
 
 var App = angular.module('chematicaD3jsApp');
+
 App.controller('MainCtrl', function ($scope, $http) {
-//    $scope.awesomeThings = [
-//      'HTML5 Boilerplate',
-//      'AngularJS',
-//      'Karma'
-//    ];
-    $scope.scale = 1;
+
+    // FIXME: localize this to the d3 directive somehow?
+    $scope.graphTransform = {"scale" : 1, "offset" : [0,0]};
+
+    $scope.mousewheel =  function(event) {
+        var s = (1+event.deltaY),
+            newscale = $scope.graphTransform.scale * s;
+        if (newscale >= 0.1) {
+            $scope.graphTransform.scale = newscale;
+            $scope.graphTransform.offset[0] = $scope.graphTransform.offset[0] * s + event.originalEvent.offsetX * event.deltaY;
+            $scope.graphTransform.offset[1] = $scope.graphTransform.offset[1] * s + event.originalEvent.offsetY * event.deltaY;
+        }
+        event.preventDefault();
+    }
+
     // Get the graph model ($scope.graph)
     $http.get('example_retro.json').success(function (data) {
         // Process the data into something we can draw:
@@ -47,27 +57,16 @@ App.controller('MainCtrl', function ($scope, $http) {
         }
         $scope.graph = result;
     });
-
-    $scope.test1 =  function(event, delta, deltaX, deltaY){
-        var msg = logMsg.build('test1', delta, deltaX, deltaY);
-
-        if (msg !== '') {
-            console.log(msg);
-        }
-
-        var pageX = event.pageX || event.originalEvent.pageX || event.originalEvent.clientX,
-            pageY = event.pageY || event.originalEvent.pageY || event.originalEvent.clientX;
-
-        console.log('pageX: ' + pageX + ', pageY: ' + pageY);
-    };
 });
 
 App.directive('d3graph', function () {
     return {
         restrict: 'E',
         replace: true,
+        // FIXME: This does not make a uniquely selectable element :(
         template: '<div id="chart"></div>',
         link: function (scope, element, attrs) {
+            // Initialize our graph state
             var width = scope.$eval(attrs.width),
                 height = scope.$eval(attrs.height);
 
@@ -79,7 +78,7 @@ App.directive('d3graph', function () {
                 .linkDistance(30)
                 .size([width, height]);
 
-            var svg = d3.select("div")
+            var svg = d3.select("div#chart")
                 .append("svg")
                 .attr("width", width)
                 .attr("height", height)
@@ -87,15 +86,13 @@ App.directive('d3graph', function () {
 
             // Rescale the graph based on the scale set by the view
             // Rescales based on the center of the graph
-            scope.$watch('scale', function () {
+            scope.$watch('graphTransform', function () {
                 svg.attr("transform",
-                    "translate(" + width / 2 + "," + height / 2 + ") "
-                        + "scale(" + scope.scale + ") "
-                        + "translate(" + -width / 2 + "," + -height / 2 + ") "
+                  "scale(" + scope.graphTransform.scale + ") "
+                  + "translate(" + scope.graphTransform.offset + ") "
                 );
             });
 
-            // FIXME: triangles need to scale
             svg.append("svg:defs")
                 .append("svg:marker")
                 .attr("id", "arrow")
@@ -224,7 +221,4 @@ App.directive('slider', function () {
                 );
             }
         };
-    }
-
-
-);
+    });
