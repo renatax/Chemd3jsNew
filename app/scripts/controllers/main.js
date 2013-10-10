@@ -77,25 +77,6 @@ App.directive('d3Graph', function () {
                 .append('svg')
                 .attr('width', scope.width)
                 .attr('height', scope.height)
-                .append('g');
-
-            // Rescale the graph based on the scale set by the view
-            // Rescales based on the center of the graph
-            scope.mousewheel = function (event) {
-                var scale_ = scope.scale + event.deltaY;
-                if (scale_ >= 0.1) {
-                    scope.a = [ event.originalEvent.offsetX, event.originalEvent.offsetY];
-                    scope.b = [ -scope.width / 2, -scope.height / 2 ];
-                    scope.scale = scale_;
-                }
-                event.preventDefault();
-            };
-
-            scope.$watch('scale', function () {
-                svg.attr('transform',
-                    'translate(' + scope.a + ') scale(' + scope.scale + ') translate(' + scope.b + ') '
-                );
-            });
 
             svg.append('svg:defs')
                 .append('svg:marker')
@@ -109,7 +90,34 @@ App.directive('d3Graph', function () {
                 .append('svg:path')
                 .attr('d', 'M0,-5L10,0L0,5');
 
+            var bg = svg.append('rect')
+                .attr('width', scope.width)
+                .attr('height', scope.height)
+                .style('fill', '#333');
 
+            var g = svg.append('g');
+
+            var updateTransform = function () {
+                g.attr('transform',
+                    'translate(' + scope.a + ') scale(' + scope.scale + ') translate(' + scope.b + ') '
+                );
+            };
+
+            // Rescale the graph based on the scale set by the view
+            // Rescales based on the center of the graph
+            scope.mousewheel = function (event) {
+                var scale_ = scope.scale + event.deltaY;
+                if (scale_ >= 0.1) {
+                    scope.a = [ event.originalEvent.offsetX, event.originalEvent.offsetY];
+                    scope.b = [ -scope.width / 2, -scope.height / 2 ];
+                    scope.scale = scale_;
+                }
+                updateTransform();
+                event.preventDefault();
+            };
+
+
+            //scope.$watch('scale', updateTransform);
 
             scope.$watch('graph', function () {
                 if (!scope.graph || !scope.graph.nodes || !scope.graph.links) {
@@ -128,7 +136,7 @@ App.directive('d3Graph', function () {
                 });
 
                 // Format the chemical nodes
-                var chemNode = svg.selectAll('.node')
+                var chemNode = g.selectAll('.node')
                     .data(chemicalNodes, function (d) {
                         return d.idx;
                     })
@@ -147,7 +155,7 @@ App.directive('d3Graph', function () {
                     });
 
                 // Format the reaction nodes
-                var rxNode = svg.selectAll('.node')
+                var rxNode = g.selectAll('.node')
                     .data(reactionNodes, function (d) {
                         return d.idx;
                     })
@@ -167,7 +175,7 @@ App.directive('d3Graph', function () {
                     });
 
                 // FIXME: link start and end points are ugly ~Ling
-                var link = svg.selectAll('.link')
+                var link = g.selectAll('.link')
                     .data(scope.graph.links).enter()
                     .append('line')
                     .attr('class', 'link')
