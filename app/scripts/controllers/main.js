@@ -114,13 +114,12 @@ App.directive('d3Graph', function () {
             // FIXME: uses funny scrolling.  Use good scrolling ~ling
             scope.mousewheel = function (event) {
                 var scale_ = scope.scale + event.deltaY;
-                if (scale_ >= 0.1) {
+                if (scale_ >= 0.1 && scale_<=20) {
                     scope.a = [ event.originalEvent.offsetX - scale_ * scope.width / 2,
                                 event.originalEvent.offsetY - scale_ * scope.height / 2];
 //                    scope.a = [ scope.a[0] * scale_ + event.originalEvent.offsetX - scale_ * event.originalEvent.offsetX / 2,
 //                                scope.a[1] * scale_ + event.originalEvent.offsetY - scale_ * event.originalEvent.offsetY / 2];
                     scope.scale = scale_;
-                    console.log(scope.a,scope.scale);
                     updateTransform();
                 }
                 event.preventDefault();

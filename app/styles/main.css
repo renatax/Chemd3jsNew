@@ -1,6 +1,7 @@
 body {
     font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
     padding: 0;
+    overflow: hidden;
 }
 
 html, body {
