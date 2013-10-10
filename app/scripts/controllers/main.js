@@ -57,14 +57,15 @@ App.directive('d3Graph', function () {
         },
         // FIXME: This does not make a uniquely selectable element :(
         template: '<div id="chart"></div>',
-        link: function (scope, element, attrs) {
+        link: function (scope, element) {
             // Initialize our graph state
-            scope.width = window.innerWidth;//scope.$eval(attrs.width);
-            scope.height = window.innerHeight;//scope.$eval(attrs.height);
+            scope.width = element.width();
+            // FIXME: This should inherit out the height from the element somehow
+            scope.height = window.innerHeight;
+
             scope.scale = 1;
-            scope.a = {x: 0, y: 0};
-            scope.b = {x: 0, y: 0};
-            console.log(scope.width);
+            scope.a = [0,0];
+            scope.b = [0,0];
 
             // FIXME: Does nothing
             var color = d3.scale.category20();
@@ -74,10 +75,8 @@ App.directive('d3Graph', function () {
                 .linkDistance(30)
                 .size([scope.width, scope.height]);
 
-            var svg = d3.select('div#chart')
-                .append('svg')
-                .attr('width', scope.width)
-                .attr('height', scope.height)
+            var svg = d3.select('div#chart').append('svg');
+
 
             svg.append('svg:defs')
                 .append('svg:marker')
@@ -91,21 +90,29 @@ App.directive('d3Graph', function () {
                 .append('svg:path')
                 .attr('d', 'M0,-5L10,0L0,5');
 
-            var bg = svg.append('rect')
-                .attr('width', scope.width)
-                .attr('height', scope.height)
-                .style('fill', '#333');
+            // Create the background and foreground
+            var bg = svg.append('rect').style('fill', '#333');
 
-            var g = svg.append('g');
+            var setDim = function () {
+                scope.width = element.width();
+                scope.height = window.innerHeight;
+                svg.attr('width', scope.width).attr('height', scope.height);
+                bg.attr('width', scope.width).attr('height', scope.height);
+            };
+            setDim();
+            $( window ).resize(setDim);
 
+            var fg = svg.append('g').attr('transform', 'scale (' + scope.scale + ')');
+
+            // Update the foreground's position
             var updateTransform = function () {
-                g.attr('transform',
+                fg.attr('transform',
                     'translate(' + scope.a + ') scale(' + scope.scale + ') translate(' + scope.b + ') '
                 );
             };
-
-            // Rescale the graph based on the scale set by the view
-            // Rescales based on the center of the graph
+            
+            // Rescale the graph foreground based when the user scrolls
+            // FIXME: uses funny scrolling.  Use good scrolling ~ling
             scope.mousewheel = function (event) {
                 var scale_ = scope.scale + event.deltaY;
                 if (scale_ >= 0.1) {
@@ -117,8 +124,15 @@ App.directive('d3Graph', function () {
                 event.preventDefault();
             };
 
-
-            //scope.$watch('scale', updateTransform);
+            // Translate the graph's foreground when the user clicks the background
+            var drag = d3.behavior.drag()
+                .on("drag", function(d,i) {
+                    scope.b[0] += d3.event.dx;
+                    scope.b[1] += d3.event.dy;
+                    console.log(scope.b);
+                    updateTransform();
+                });
+            bg.call(drag);
 
             scope.$watch('graph', function () {
                 if (!scope.graph || !scope.graph.nodes || !scope.graph.links) {
@@ -137,7 +151,7 @@ App.directive('d3Graph', function () {
                 });
 
                 // Format the chemical nodes
-                var chemNode = g.selectAll('.node')
+                var chemNode = fg.selectAll('.node')
                     .data(chemicalNodes, function (d) {
                         return d.idx;
                     })
@@ -156,7 +170,7 @@ App.directive('d3Graph', function () {
                     });
 
                 // Format the reaction nodes
-                var rxNode = g.selectAll('.node')
+                var rxNode = fg.selectAll('.node')
                     .data(reactionNodes, function (d) {
                         return d.idx;
                     })
@@ -176,7 +190,7 @@ App.directive('d3Graph', function () {
                     });
 
                 // FIXME: link start and end points are ugly ~Ling
-                var link = g.selectAll('.link')
+                var link = fg.selectAll('.link')
                     .data(scope.graph.links).enter()
                     .append('line')
                     .attr('class', 'link')
