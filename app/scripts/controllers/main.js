@@ -59,11 +59,12 @@ App.directive('d3Graph', function () {
         template: '<div id="chart"></div>',
         link: function (scope, element, attrs) {
             // Initialize our graph state
-            scope.width = scope.$eval(attrs.width);
-            scope.height = scope.$eval(attrs.height);
+            scope.width = window.innerWidth;//scope.$eval(attrs.width);
+            scope.height = window.innerHeight;//scope.$eval(attrs.height);
             scope.scale = 1;
             scope.a = {x: 0, y: 0};
             scope.b = {x: 0, y: 0};
+            console.log(scope.width);
 
             // FIXME: Does nothing
             var color = d3.scale.category20();
