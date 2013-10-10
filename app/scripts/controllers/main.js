@@ -61,11 +61,10 @@ App.directive('d3Graph', function () {
             // Initialize our graph state
             scope.width = element.width();
             // FIXME: This should inherit out the height from the element somehow
-            scope.height = window.innerHeight;
+            scope.height = element.height();
 
             scope.scale = 1;
             scope.a = [0,0];
-            scope.b = [0,0];
 
             // FIXME: Does nothing
             var color = d3.scale.category20();
@@ -82,7 +81,7 @@ App.directive('d3Graph', function () {
                 .append('svg:marker')
                 .attr('id', 'arrow')
                 .attr('viewBox', '0 -5 10 10')
-                .attr('refX', 15)
+                .attr('refX', 18)
                 .attr('refY', 0)
                 .attr('markerWidth', 6)
                 .attr('markerHeight', 6)
@@ -95,7 +94,7 @@ App.directive('d3Graph', function () {
 
             var setDim = function () {
                 scope.width = element.width();
-                scope.height = window.innerHeight;
+                scope.height = element.height();
                 svg.attr('width', scope.width).attr('height', scope.height);
                 bg.attr('width', scope.width).attr('height', scope.height);
             };
@@ -107,7 +106,7 @@ App.directive('d3Graph', function () {
             // Update the foreground's position
             var updateTransform = function () {
                 fg.attr('transform',
-                    'translate(' + scope.a + ') scale(' + scope.scale + ') translate(' + scope.b + ') '
+                    'translate(' + scope.a + ') scale(' + scope.scale + ')'
                 );
             };
             
@@ -116,20 +115,22 @@ App.directive('d3Graph', function () {
             scope.mousewheel = function (event) {
                 var scale_ = scope.scale + event.deltaY;
                 if (scale_ >= 0.1) {
-                    scope.a = [ event.originalEvent.offsetX, event.originalEvent.offsetY];
-                    scope.b = [ -scope.width / 2, -scope.height / 2 ];
+                    scope.a = [ event.originalEvent.offsetX - scale_ * scope.width / 2,
+                                event.originalEvent.offsetY - scale_ * scope.height / 2];
+//                    scope.a = [ scope.a[0] * scale_ + event.originalEvent.offsetX - scale_ * event.originalEvent.offsetX / 2,
+//                                scope.a[1] * scale_ + event.originalEvent.offsetY - scale_ * event.originalEvent.offsetY / 2];
                     scope.scale = scale_;
+                    console.log(scope.a,scope.scale);
+                    updateTransform();
                 }
-                updateTransform();
                 event.preventDefault();
             };
 
             // Translate the graph's foreground when the user clicks the background
             var drag = d3.behavior.drag()
                 .on("drag", function(d,i) {
-                    scope.b[0] += d3.event.dx;
-                    scope.b[1] += d3.event.dy;
-                    console.log(scope.b);
+                    scope.a[0] +=  d3.event.dx;
+                    scope.a[1] +=  d3.event.dy;
                     updateTransform();
                 });
             bg.call(drag);
@@ -149,6 +150,18 @@ App.directive('d3Graph', function () {
                 var reactionNodes = scope.graph.nodes.filter(function (d) {
                     return d.nodeType === 'reaction';
                 });
+
+                // FIXME: link start and end points are ugly ~Ling
+                var link = fg.selectAll('.link')
+                    .data(scope.graph.links).enter()
+                    .append('line')
+                    .attr('class', 'link')
+                    .attr('marker-end', function () {
+                        return 'url(#arrow)';
+                    })
+                    .style('stroke-width', function (d) {
+                        return Math.sqrt(d.value);
+                    });
 
                 // Format the chemical nodes
                 var chemNode = fg.selectAll('.node')
@@ -189,17 +202,6 @@ App.directive('d3Graph', function () {
                         return d.name;
                     });
 
-                // FIXME: link start and end points are ugly ~Ling
-                var link = fg.selectAll('.link')
-                    .data(scope.graph.links).enter()
-                    .append('line')
-                    .attr('class', 'link')
-                    .attr('marker-end', function () {
-                        return 'url(#arrow)';
-                    })
-                    .style('stroke-width', function (d) {
-                        return Math.sqrt(d.value);
-                    });
 
                 var updateForceGraph = function () {
                     link.attr('x1', function (d) {
