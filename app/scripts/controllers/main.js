@@ -81,7 +81,7 @@ App.directive('d3Graph', function () {
                 .append('svg:marker')
                 .attr('id', 'arrow')
                 .attr('viewBox', '0 -5 10 10')
-                .attr('refX', 18)
+                .attr('refX', 7)
                 .attr('refY', 0)
                 .attr('markerWidth', 6)
                 .attr('markerHeight', 6)
@@ -151,18 +151,6 @@ App.directive('d3Graph', function () {
                     return d.nodeType === 'reaction';
                 });
 
-                // FIXME: link start and end points are ugly ~Ling
-                var link = fg.selectAll('.link')
-                    .data(scope.graph.links).enter()
-                    .append('line')
-                    .attr('class', 'link')
-                    .attr('marker-end', function () {
-                        return 'url(#arrow)';
-                    })
-                    .style('stroke-width', function (d) {
-                        return Math.sqrt(d.value);
-                    });
-
                 // Format the chemical nodes
                 var chemNode = fg.selectAll('.node')
                     .data(chemicalNodes, function (d) {
@@ -202,19 +190,29 @@ App.directive('d3Graph', function () {
                         return d.name;
                     });
 
+                var link = fg.selectAll('.link')
+                    .data(scope.graph.links).enter()
+                    .append('line')
+                    .attr('class', 'link')
+                    .attr('marker-end', function () {
+                        return 'url(#arrow)';
+                    })
+                    .style('stroke-width', function (d) {
+                        return Math.sqrt(d.value);
+                    });
 
                 var updateForceGraph = function () {
                     link.attr('x1', function (d) {
-                        return d.source.x;
+                        return d.source.x + 7 * Math.sin(Math.atan2(d.target.x - d.source.x, d.target.y - d.source.y));
                     })
                         .attr('y1', function (d) {
-                            return d.source.y;
+                            return d.source.y + 7 * Math.cos(Math.atan2(d.target.x - d.source.x, d.target.y - d.source.y));
                         })
                         .attr('x2', function (d) {
-                            return d.target.x;
+                            return d.target.x - 7 * Math.sin(Math.atan2(d.target.x - d.source.x, d.target.y - d.source.y));
                         })
                         .attr('y2', function (d) {
-                            return d.target.y;
+                            return d.target.y - 7 * Math.cos(Math.atan2(d.target.x - d.source.x, d.target.y - d.source.y));
                         });
 
 
