@@ -62,10 +62,8 @@ App.directive('d3Graph', function () {
             scope.width = scope.$eval(attrs.width);
             scope.height = scope.$eval(attrs.height);
             scope.scale = 1;
-            scope.xOff = scope.width / 2;
-            scope.yOff = scope.height / 2;
-
-
+            scope.a = {x: 0, y: 0};
+            scope.b = {x: 0, y: 0};
 
             // FIXME: Does nothing
             var color = d3.scale.category20();
@@ -84,16 +82,18 @@ App.directive('d3Graph', function () {
             // Rescale the graph based on the scale set by the view
             // Rescales based on the center of the graph
             scope.mousewheel = function (event) {
-                var newscale = scope.scale + event.deltaY;
-                if (newscale >= 0.1) {
-                    scope.scale = newscale;
+                var scale_ = scope.scale + event.deltaY;
+                if (scale_ >= 0.1) {
+                    scope.a = [ event.originalEvent.offsetX, event.originalEvent.offsetY];
+                    scope.b = [ -scope.width / 2, -scope.height / 2 ];
+                    scope.scale = scale_;
                 }
                 event.preventDefault();
             };
 
             scope.$watch('scale', function () {
                 svg.attr('transform',
-                    'translate(' + [scope.xOff, scope.yOff] + ') ' + 'scale(' + scope.scale + ') ' + 'translate(' + [-scope.xOff, -scope.yOff] + ') '
+                    'translate(' + scope.a + ') scale(' + scope.scale + ') translate(' + scope.b + ') '
                 );
             });
 
@@ -102,15 +102,19 @@ App.directive('d3Graph', function () {
                 .attr('id', 'arrow')
                 .attr('viewBox', '0 -5 10 10')
                 .attr('refX', 15)
-                .attr('refY', -1.5)
+                .attr('refY', 0)
                 .attr('markerWidth', 6)
                 .attr('markerHeight', 6)
                 .attr('orient', 'auto')
                 .append('svg:path')
                 .attr('d', 'M0,-5L10,0L0,5');
 
+
+
             scope.$watch('graph', function () {
-                if (!scope.graph || !scope.graph.nodes || !scope.graph.links) {return;}
+                if (!scope.graph || !scope.graph.nodes || !scope.graph.links) {
+                    return;
+                }
 
                 force.nodes(scope.graph.nodes)
                     .links(scope.graph.links)
